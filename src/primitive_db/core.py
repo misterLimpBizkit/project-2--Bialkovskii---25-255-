@@ -51,3 +51,21 @@ def create_table(metadata, table_name, *columns):
         print('Недопустимый формат колонок.')
 
 
+def drop_table(metadata, table_name):
+    '''
+        Drop a table from the metadata file.
+
+        Args:
+                metadata (dict): The metadata dictionary.
+                table_name (str): The name of the table to drop.
+
+        Returns:
+                Updated metadata.
+    '''
+
+    if table_name in metadata:
+        del metadata[table_name]
+        return metadata
+    else:
+        print('Такой таблицы не существует.')
+        
