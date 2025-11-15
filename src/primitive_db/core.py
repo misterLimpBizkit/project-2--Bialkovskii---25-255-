@@ -46,7 +46,6 @@ def create_table(metadata, table_name, *columns):
                 processed_columns = ['ID:int']
             else:
                 processed_columns = []
-                
             processed_columns.append(f'{column_name.strip()}:{data_type.lower().strip()}')
         
         metadata[table_name] = {'columns': processed_columns}
@@ -72,4 +71,5 @@ def drop_table(metadata, table_name):
         return metadata
     else:
         print('Такой таблицы не существует.')
+
 

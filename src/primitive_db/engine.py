@@ -10,7 +10,7 @@ def run():
     None.
     '''
     print("Добро пожаловать в DB-проект!")
-    print("Доступные команды: 'help', 'exit', 'create_table', 'drop_table")
+    print("Доступные команды: 'help', 'exit', 'create_table', 'drop_table', 'list_tables'")
     root_json = 'metadata.json'
     metadata = load_metadata(root_json)
     while True:
@@ -56,6 +56,12 @@ def run():
                             print(f"Таблица '{table_name}' не существует.")
                 case 'help':
                     print_help()
+                case 'list_tables':
+                    if metadata:
+                        list_tables = list(metadata.keys())
+                        print(f"Таблицы в базе данных: {', '.join(list_tables)}")
+                    else:
+                        print("В базе данных нет таблиц.")
                 case _:
                     print(f"Неизвестная команда {command}. Введите 'help'")
         except KeyboardInterrupt:
