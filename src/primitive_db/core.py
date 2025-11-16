@@ -1,3 +1,6 @@
+import os
+from prettytable import PrettyTable
+from utils import (id_generator, create_record, validate_and_convert_types, save_table_data, load_metadata, load_table_data)
 def create_table(metadata, table_name, *columns):
     '''
     Create a new table in the metadata.
@@ -78,9 +81,15 @@ def drop_table(metadata, table_name):
         Returns:
                 Updated metadata.
     '''
-
     if table_name in metadata:
         del metadata[table_name]
+        file_path = f"data/{table_name}.json"
+        try:
+            if os.path.exists(file_path):
+                os.remove(file_path)
+                print(f"Файл данных '{file_path}' удален")
+        except OSError as e:
+            print(f"Ошибка при удалении файла '{file_path}': {e}")
         return metadata
     else:
         print('Такой таблицы не существует.')
@@ -98,13 +107,14 @@ def insert(metadata, table_name, *values):
         Returns:
                 Updated metadata.
         '''
-    from primitive_db.utils import load_table_data, save_table_data
 
     if table_name not in metadata:
         print('Такой таблицы не существует.')
         return None
     
     table_data = load_table_data(table_name)
+    if not table_data:
+        table_data = []
 
     table_columns = metadata[table_name]['columns']
     useful_table_columns = [col for col in table_columns if not col.startswith('ID:')]
@@ -127,94 +137,53 @@ def insert(metadata, table_name, *values):
     print(f"Запись успешно добавлена в таблицу '{table_name}' с ID={new_id}")
     return table_data
 
-
-def validate_and_convert_types(useful_table_columns, values):
+def select(table_data, where_clause=None):
     '''
-    Validate and convert values to their respective types.
-
-    Args:
-            usefull_table_columns (list): List of column definitions.
-            values (tuple): Values to validate and convert.
-
-    Returns:
-            list: Converted values or None on error.
-    '''
-    converted_values = []
-
-    for value, column in zip(values, useful_table_columns):
-        col_name, col_type = column.split(':', 1)
-        col_type = col_type.strip().lower()
-        
-        try:
-            if col_type == 'int':
-                converted = int(value)
-            elif col_type == 'bool':
-                if value.lower() in ('true', '1', 'yes', 'да'):
-                    converted = True
-                elif value.lower() in ('false', '0', 'no', 'нет'):
-                    converted = False
-                else:
-                    print(f"Ошибка: '{value}' нельзя преобразовать в bool")
-                    return None
-            elif col_type == 'str':
-                converted = str(value)
-            else:
-                print(f"Неизвестный тип: {col_type}")
-                return None
-                
-            converted_values.append(converted)
-            
-        except ValueError as e:
-            print(f"Ошибка: не могу преобразовать '{value}' в {col_type}")
-            return None
-    
-    return converted_values
-
-
-def id_generator(table_data):
-    '''
-    Generate a unique ID for a new row.
-
-    Args:
-            table_data (str): The list of rows in the table.
-        
-    Returns:
-            int: The generated ID.
-    '''
-    if not table_data:
-        return 1
-    
-    return max((row['ID'] for row in table_data), default=0) + 1
-
-def create_record(new_id, checked_values, useful_table_columns):
-    '''
-        Create a new record dictionary.
+        Select rows from a table based on a where clause.
 
         Args:
-                new_id (int): The ID of the new record.
-                values (tuple): The values to insert.
-                usefull_table_columns (list): List of column definitions.
+                table_data (list): The list of rows in the table.
+                where_clause (str, optional): The where clause to filter rows.
 
         Returns:
-                dict: The new record.
-    '''
-    record = {'ID': new_id}
-    for value, column in zip(checked_values, useful_table_columns):
-        column = column.split(':')[0]
-        record[column] = value
-    return record
-
-
-    
-
-
-
-
-
-            
+                list: Filtered rows.
+        '''
+    try:
+        if not table_data:
+            return None
         
+        if not where_clause:
+            return table_data
         
+        if not isinstance(where_clause, dict) or len(where_clause) == 0:
+            print("Ошибка: where_clause должен быть словарем")
+            return None
+        
+        column = list(where_clause.keys())[0]
+        value = list(where_clause.values())[0]
 
+        if column not in table_data[0]:
+            print(f'Ошибка: Колонка "{column}" не существует в таблице.')
+            print(f'Доступные колонки: {", ".join(table_data[0].keys())}')
+            return None
+        
+        filtered_data = []
+        for row in table_data:
+                if row.get(column) == value:
+                    filtered_data.append(row)
 
-    
-    
+        return filtered_data
+
+    except IndexError:
+        print("Ошибка: Пустой where_clause или проблемы с индексами")
+        return []
+    except AttributeError as e:
+        print(f"Ошибка: Проблема с структурой данных - {e}")
+        return []
+    except KeyError as e:
+        print(f"Ошибка: Проблема с ключами в данных - {e}")
+        return []
+    except Exception as e:
+        print(f"Неожиданная ошибка в select: {e}")
+        return []
+              

@@ -30,7 +30,7 @@ def load_metadata(file_path=DEFAULT_FILE_PATH):
         print(f"Нет прав на чтение файла: {file_path}")
         return {}
     
-def save_metadata(metadata, file_path=DEFAULT_FILE_PATH):
+def save_metadata(metadata):
 
     '''
        Save metadata to a JSON file.
@@ -42,8 +42,10 @@ def save_metadata(metadata, file_path=DEFAULT_FILE_PATH):
     Returns:
         None.
     '''
-
+    file_path = DEFAULT_FILE_PATH
     try:
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
+        
         with open(file_path, 'w', encoding='utf-8') as file:
             json.dump(metadata, file, indent=4, ensure_ascii=False)
     except PermissionError:
@@ -71,18 +73,19 @@ def load_table_data(table_name):
     try:
         if os.path.exists(file_path):
             with open(file_path, 'r') as file:
-                return json.load(file)
+                data = json.load(file)
+            return data if isinstance(data, list) else []
         else:
-            return {}
+            return []
     except FileNotFoundError:
         print(f"Ошибка, файл {file_path} не найден")
-        return {}
+        return []
     except json.JSONDecodeError:
         print(f"Ошибка, некорректный формат в '{file_path}'.")
-        return {}
+        return []
     except PermissionError:
         print(f"Нет прав на чтение файла: {file_path}")
-        return {}
+        return []
 
 
 def save_table_data(table_name, data):
@@ -104,3 +107,81 @@ def save_table_data(table_name, data):
             json.dump(data, file, indent=4, ensure_ascii=False, sort_keys=True)
     except PermissionError:
         print(f"Нет прав на запись в файл: {file_path}")
+
+
+def validate_and_convert_types(useful_table_columns, values):
+    '''
+    Validate and convert values to their respective types.
+
+    Args:
+            usefull_table_columns (list): List of column definitions.
+            values (tuple): Values to validate and convert.
+
+    Returns:
+            list: Converted values or None on error.
+    '''
+    converted_values = []
+
+    for value, column in zip(values, useful_table_columns):
+        col_name, col_type = column.split(':', 1)
+        col_type = col_type.strip().lower()
+        
+        try:
+            if col_type == 'int':
+                converted = int(value)
+            elif col_type == 'bool':
+                if value.lower() in ('true', '1', 'yes', 'да'):
+                    converted = True
+                elif value.lower() in ('false', '0', 'no', 'нет'):
+                    converted = False
+                else:
+                    print(f"Ошибка: '{value}' нельзя преобразовать в bool")
+                    return None
+            elif col_type == 'str':
+                converted = str(value)
+            else:
+                print(f"Неизвестный тип: {col_type}")
+                return None
+                
+            converted_values.append(converted)
+            
+        except ValueError as e:
+            print(f"Ошибка: не могу преобразовать '{value}' в {col_type}")
+            return None
+    
+    return converted_values
+
+
+def id_generator(table_data):
+    '''
+    Generate a unique ID for a new row.
+
+    Args:
+            table_data (str): The list of rows in the table.
+        
+    Returns:
+            int: The generated ID.
+    '''
+    if not table_data:
+        return 1
+    
+    return max((row['ID'] for row in table_data), default=0) + 1  # +1 не забываем
+
+
+def create_record(new_id, checked_values, useful_table_columns):
+    '''
+        Create a new record dictionary.
+
+        Args:
+                new_id (int): The ID of the new record.
+                values (tuple): The values to insert.
+                usefull_table_columns (list): List of column definitions.
+
+        Returns:
+                dict: The new record.
+    '''
+    record = {'ID': new_id}
+    for value, column in zip(checked_values, useful_table_columns):
+        column = column.split(':')[0]
+        record[column] = value
+    return record

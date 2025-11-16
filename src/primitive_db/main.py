@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 def main():
-    from primitive_db.engine import run
+    from engine import run
     print('DB project is running!')
     run()
 

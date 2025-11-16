@@ -1,7 +1,7 @@
 import prompt
 import shlex
-from primitive_db.core import create_table, drop_table  
-from primitive_db.utils import load_metadata, save_metadata
+from core import create_table, drop_table, insert, select
+from utils import load_metadata, save_metadata, load_table_data, save_table_data
 def run():
     '''
     Main function of the program. Cicle of interaction with the user.
@@ -11,8 +11,8 @@ def run():
     '''
     print("Добро пожаловать в DB-проект!")
     print("Доступные команды: 'help', 'exit', 'create_table', 'drop_table', 'list_tables'")
-    root_json = 'metadata.json'
-    metadata = load_metadata(root_json)
+    root_json = "metadata.json"
+    metadata = load_metadata()
     while True:
         try:
             answer = prompt.string('Введите команду: ').strip().lower()
@@ -41,8 +41,7 @@ def run():
                             print(f"Таблица '{table_name}' уже существует.")
                         else:
                             create_table(metadata, table_name, *columns)
-                            save_metadata(metadata, root_json)
-                            print(f"Таблица '{table_name}' создана.")
+                            save_metadata(metadata)
                 case 'drop_table':
                     if len(args) != 2:
                         print("Использование: drop_table <table>")
@@ -50,7 +49,7 @@ def run():
                         table_name = args[1]
                         if table_name in metadata:
                             drop_table(metadata, table_name)
-                            save_metadata(metadata, root_json)
+                            save_metadata(metadata)
                             print(f"Таблица '{table_name}' удалена.")
                         else:
                             print(f"Таблица '{table_name}' не существует.")
@@ -62,6 +61,16 @@ def run():
                         print(f"Таблицы в базе данных: {', '.join(list_tables)}")
                     else:
                         print("В базе данных нет таблиц.")
+                case 'insert':
+                    if len(args) < 3:
+                        print("Использование: insert <table> <value1> [value2 ...]")
+                    else:
+                        table_name = args[1]
+                        values = args[2:]
+                        if table_name in metadata:
+                            insert(metadata, table_name, *values)
+                        else:
+                            print(f"Таблица '{table_name}' не существует.")
                 case _:
                     print(f"Неизвестная команда {command}. Введите 'help'")
         except KeyboardInterrupt:
@@ -86,8 +95,3 @@ def print_help():
     print("\nОбщие команды:")
     print("<command> exit - выход из программы")
     print("<command> help - справочная информация\n")
-
-            
-            
-        
-            
