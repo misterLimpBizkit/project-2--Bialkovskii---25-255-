@@ -285,14 +285,14 @@ def delete(table_data, where_clause):
         return None
 
     if not where_clause_check(table_data, where_clause):
-        return None
+        return []
 
     try:
         updated_count = 0
-        for row in table_data[:]:
+        for row in table_data:
             if all(row.get(key) == value for key, value in where_clause.items()):
-                table_data.remove(row)
                 updated_count += 1
+                table_data.remove(row)
 
         if updated_count == 0:
             print('Нет строк, удовлетворяющих условиям where_clause.')

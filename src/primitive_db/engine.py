@@ -1,8 +1,8 @@
 import prompt
 import shlex
-from core import create_table, drop_table, insert, select, delete
+from core import create_table, drop_table, insert, select, delete, update
 from utils import load_metadata, save_metadata, load_table_data, save_table_data, display_table_data
-from parser import parser_insert_command, parse_select_command
+from parser import parser_insert_command, parse_select_delete_commands, parse_update_command
 def run():
     '''
     Main function of the program. Cicle of interaction with the user.
@@ -76,10 +76,10 @@ def run():
                     print(f"Данные успешно добавлены в таблицу '{table_name}'")
 
                 case 'select':
-                    table_name, where_clause = parse_select_command(args)
-                    table_data = load_table_data(table_name)
+                    table_name, where_clause = parse_select_delete_commands(args)
                     if table_name not in metadata:
                         print('Такой таблицы нет.')
+                    table_data = load_table_data(table_name)
                     if table_name == None:
                         continue
                     data_to_be_showed = select(table_data, where_clause)
@@ -87,6 +87,32 @@ def run():
                         continue
                     display_table_data(data_to_be_showed, table_name)
                     print('Данные показаны.')
+
+                case 'update':
+                    table_name, set_clause, where_clause = parse_update_command(args)
+                    if table_name == None:
+                        continue
+                    if table_name not in metadata:
+                        continue
+                    table_data = load_table_data(table_name)
+                    updated_data = update(table_data, set_clause, where_clause)
+                    if not updated_data:
+                        continue
+                    save_table_data(table_name, updated_data)
+                    print('Данные обновлены.')
+
+                case 'delete':
+                    table_name, where_clause = parse_select_delete_commands(args)
+                    if not where_clause:
+                        table_data = []
+                    if table_name not in metadata:
+                        print('Такой таблицы нет.')
+                        continue
+                    if table_name == None:
+                        continue
+                    table_data = load_table_data(table_name)
+                    deleted_data = delete(table_data, where_clause)
+                    save_table_data(table_name, deleted_data)
 
                 case 'help':
                     print_help()

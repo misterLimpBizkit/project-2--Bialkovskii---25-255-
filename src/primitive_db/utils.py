@@ -225,3 +225,5 @@ def display_table_data(table_data, table_name='Данные'):
     table.title = f"{table_name}"
 
     print(table)
+
+

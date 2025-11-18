@@ -101,7 +101,7 @@ def parse_where_clause(where_args):
         
     return where_clause
     
-def parse_select_command(select_args):
+def parse_select_delete_commands(select_args):
     '''
     Parse the SELECT command arguments.
 
@@ -124,9 +124,62 @@ def parse_select_command(select_args):
 
     if len(select_args) > 2 and select_args[2].lower() == 'where':
         where_clause = parse_where_clause(select_args[3:])
-        print(where_clause)
         if where_clause is None:
             print('Нет условия.')
             return None, None
         
     return table_name, where_clause
+
+
+def parse_update_command(update_args):
+    '''
+    Parse UPDATE command in format: update <table> set <column> = <value> where <column> = <value>
+
+    Args:
+        update_args (list): The arguments after 'update' command
+
+    Returns:
+        tuple: (table_name, set_clause, where_clause) or (None, None, None) on error
+    '''
+    if len(update_args) < 8:
+        print('Использование: update <table> set <column> = <value> where <column> = <value>')
+        return None, None, None
+
+    try:
+        table_name = update_args[0]
+        
+        if update_args[1].lower() != 'set':
+            print('Ожидается "set" после имени таблицы')
+            return None, None, None
+            
+        if update_args[5].lower() != 'where':
+            print('Ожидается "where" после значения SET')
+            return None, None, None
+        
+        set_column = update_args[2]
+        if update_args[3] != '=':
+            print('Ожидается "=" в SET условии')
+            return None, None, None
+        
+        set_value = parse_value(update_args[4])
+        if set_value is None:
+            return None, None, None
+        
+        set_clause = {set_column: set_value}
+        
+        where_column = update_args[6]
+        if update_args[7] != '=':
+            print('Ожидается "=" в WHERE условии')
+            return None, None, None
+        
+        where_value = parse_value(update_args[8] if len(update_args) > 8 else "")
+        if where_value is None:
+            return None, None, None
+        
+        where_clause = {where_column: where_value}
+        
+        return table_name, set_clause, where_clause
+        
+    except Exception as e:
+        print(f'Ошибка парсинга UPDATE: {e}')
+        return None, None, None
