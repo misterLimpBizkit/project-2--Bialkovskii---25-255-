@@ -95,7 +95,7 @@ def drop_table(metadata, table_name):
         print('Такой таблицы не существует.')
         return None
 
-def insert(metadata, table_name, *values):
+def insert(metadata, table_name, values):
     '''
         Insert a new row into a table.
 
@@ -132,7 +132,6 @@ def insert(metadata, table_name, *values):
     new_id = id_generator(table_data)
     new_record = create_record(new_id, checked_data, useful_table_columns)
     table_data.append(new_record)
-    save_table_data(table_name, table_data)
     
     print(f"Запись успешно добавлена в таблицу '{table_name}' с ID={new_id}")
     return table_data

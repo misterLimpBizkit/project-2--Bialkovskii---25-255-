@@ -1,5 +1,6 @@
 import json
 import os
+from prettytable import PrettyTable
 
 DATA_DIR = 'data'
 DEFAULT_FILE_PATH = os.path.join(DATA_DIR, 'metadata.json')
@@ -56,6 +57,8 @@ def get_table_data_path(table_name):
     '''
         Get the path to the data file for a specific table.
     '''
+    if not table_name:
+        return None
     return os.path.join(DATA_DIR, f'{table_name}.json')
 
 def load_table_data(table_name):
@@ -69,6 +72,8 @@ def load_table_data(table_name):
                 dict: Data as dictionary. Returns empty dict on error.
     '''
     file_path = get_table_data_path(table_name)
+    if not file_path:
+        return None
 
     try:
         if os.path.exists(file_path):
@@ -86,6 +91,9 @@ def load_table_data(table_name):
     except PermissionError:
         print(f"Нет прав на чтение файла: {file_path}")
         return []
+    except Exception as e:
+        print(f"Ошибка загрузки данных: {e}")
+        return []
 
 
 def save_table_data(table_name, data):
@@ -100,6 +108,8 @@ def save_table_data(table_name, data):
             None.
     '''
     file_path = get_table_data_path(table_name)
+    if not file_path:
+        return None
     try:
         os.makedirs(os.path.dirname(file_path), exist_ok=True)
 
@@ -185,3 +195,33 @@ def create_record(new_id, checked_values, useful_table_columns):
         column = column.split(':')[0]
         record[column] = value
     return record
+
+def display_table_data(table_data, table_name='Данные'):
+    '''Display table data in a formatted table using PrettyTable.
+
+    Args:
+        table_data (list): List of dictionaries representing table rows.
+                          Each dictionary should have the same keys.
+        table_name (str): Name of the table for the title.
+
+    Returns:
+        None: Prints the formatted table to console.
+    '''
+    if not table_data:
+        return 
+    
+    table = PrettyTable()
+
+    table.field_names = list(table_data[0].keys())
+
+    for row in table_data:
+        table.add_row([row[field] for field in table.field_names])
+
+    table.align = "l"
+    table.horizontal_char = "─"
+    table.vertical_char = "│"
+    table.junction_char = "┼"
+
+    table.title = f"{table_name}"
+
+    print(table)
